@@ -1,0 +1,15 @@
+{
+  "name": "eccc-producer-api",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "app/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@confluentinc/kafka-javascript": "^1.10.0"
+  }
+}
