@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ECCC Alerts</string>
+    <string name="unsubscribe_from_eccc_alerts">Unsubscribe from ECCC Alerts</string>
+    <string name="subscribe_to_eccc_alerts">Subscribe to ECCC Alerts</string>
+    <string name="this_is_an_open_source_project_available_on_github_https_github_com_349gill_eccc_weather_alerts">This is an open-source project available on GitHub: https://github.com/349gill/eccc-weather-alerts</string>
+    <string name="details">New updates are pushed within 15 minutes after the ECCC Database is updated. You can subscribe to recieve notifications from multiple provinces.</string>
+    <string name="more_details">This app allows you to recieve push notifications from Environment and Climate Change Canada about weather-related warnings, hazards, and emergencies.</string>
+    <string name="title">ECCC Weather Alerts</string>
+</resources>
