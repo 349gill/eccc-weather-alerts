@@ -12,7 +12,7 @@ The eccc-producer-service is responsible for fetching the latest updates from th
 
 The eccc-notification-api is responsible for consuming the latest events from the Kafka Topic and sending push notifications via Firebase Cloud Messaging.
 
-<img src="assets/app.png" width="50%">
+<img src="assets/image.png" width="50%">
 
 ## Usage
 Install the latest version from [releases](releases).
