@@ -1,7 +1,7 @@
-import { consumer } from "./consumer"
+import { consumer } from "./consumer.js"
 import { handler } from "./handler.js"
 
-const fs = require("fs");
+import fs from "fs";
 
 // Load Confluent Credentials
 export function readConfig(fileName) {
@@ -22,6 +22,4 @@ async function main() {
     await consumer(topic, config, handler);
 }
 
-main().then(
-    process.exit()
-);
+await main();

@@ -1,49 +1,40 @@
-import { Kafka } from "kafkajs";
-import { fetchAlerts, toFcmMessage } from "./alerts.js";
-import { claimAlert, releaseAlert, closeCache } from "./cache.js";
+import fs from "fs";
+import pkg from "@confluentinc/kafka-javascript";
+const { Kafka } = pkg.KafkaJS;
+
+import { alerts } from "./alerts.js";
+import { cache } from "./cache.js";
 
 const POLL_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
-const TOPIC = process.env.KAFKA_TOPIC ?? "weather.alerts";
+const TOPIC = "eccc-events";
 
-const kafka = new Kafka({
-  clientId: process.env.KAFKA_CLIENT_ID ?? "eccc-producer-service",
-  brokers: (process.env.KAFKA_BOOTSTRAP_SERVERS ?? "localhost:9092").split(","),
-});
-
-const producer = kafka.producer();
-
-async function publishNewAlerts() {
-  const alerts = await fetchAlerts();
-
-  for (const alert of alerts) {
-    if (!(await claimAlert(alert.id))) continue;
-
-    try {
-      await producer.send({
-        topic: TOPIC,
-        messages: [{ value: JSON.stringify(toFcmMessage(alert)) }],
-      });
-    } catch (error) {
-      await releaseAlert(alert.id);
-    }
-  }
+export function readConfig(fileName) {
+    const data = fs.readFileSync(fileName, "utf8").toString().split("\n");
+    return data.reduce((config, line) => {
+        const [key, value] = line.split("=");
+        if (key && value) {
+            config[key] = value;
+        }
+        return config;
+    }, {});
 }
 
-async function runForever() {
-  while (true) {
-    await publishNewAlerts()
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-  }
-}
-
-async function shutdown() {
-  await producer.disconnect();
-  closeCache();
-  process.exit(0);
-}
-
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
-
+const producer = new Kafka().producer(readConfig("client.properties"));
 await producer.connect();
-await runForever();
+
+console.log("Producer initialized with Topic: ", TOPIC);
+
+while (true) {
+    for (const { id, message } of await alerts()) {
+        if (await cache(id)) {
+            await producer.send({
+                topic: TOPIC,
+                messages: [{ value: JSON.stringify(message) }],
+            });
+            console.log("Cache miss, Produced: ", message);
+        } else {
+            console.log("Cache hit, ID: ", id);
+        }
+    }
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+}

@@ -1,10 +1,16 @@
-const admin = require("firebase-admin");
-const serviceAccount = require("path/to/serviceAccountKey.json");
+import { initializeApp, cert } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
+import { readFileSync } from "fs";
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
+const serviceAccount = JSON.parse(readFileSync("service-key.json", "utf8"));
+initializeApp({ credential: cert(serviceAccount) });
+console.log("Initialized Firebase Admin")
 
 export async function handler(topic, partition, message) {
-    admin.messaging().send(message.value)
+    try {
+        await getMessaging().send(JSON.parse(message.value.toString()));
+        console.log("Sent Message: ", message);
+    } catch (e) {
+        console.log("Error sending FCM Message: ", e);
+    }
 }
