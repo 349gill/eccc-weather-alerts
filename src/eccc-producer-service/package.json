@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@confluentinc/kafka-javascript": "^1.10.0",
+    "amqplib": "^2.0.1",
+    "fast-xml-parser": "^5.10.1",
     "ioredis": "^5.11.1",
     "redis-memory-server": "^0.17.0"
   }

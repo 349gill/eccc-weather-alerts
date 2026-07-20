@@ -3,7 +3,7 @@ import { handler } from "./handler.js"
 
 import fs from "fs";
 
-// Load Confluent Credentials
+// Load Kafka Credentials
 export function readConfig(fileName) {
     const data = fs.readFileSync(fileName, "utf8").toString().split("\n");
     return data.reduce((config, line) => {

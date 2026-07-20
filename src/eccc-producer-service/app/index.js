@@ -3,9 +3,7 @@ import pkg from "@confluentinc/kafka-javascript";
 const { Kafka } = pkg.KafkaJS;
 
 import { alerts } from "./alerts.js";
-import { cache } from "./cache.js";
 
-const POLL_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 const TOPIC = "eccc-events";
 
 export function readConfig(fileName) {
@@ -19,22 +17,29 @@ export function readConfig(fileName) {
     }, {});
 }
 
-const producer = new Kafka().producer(readConfig("client.properties"));
+const config = readConfig("client.properties");
+
+const producer = new Kafka({
+    kafkaJS: {
+        brokers: [config["bootstrap.servers"]],
+        ssl: true
+    },
+    "security.protocol": config["security.protocol"].toLowerCase(),
+    "ssl.ca.location": config["ssl.ca.location"],
+    "enable.ssl.certificate.verification": true,
+    "sasl.mechanism": config["sasl.mechanisms"],
+    "sasl.username": config["sasl.username"],
+    "sasl.password": config["sasl.password"]
+}).producer();
+
 await producer.connect();
 
 console.log("Producer initialized with Topic: ", TOPIC);
 
-while (true) {
-    for (const { id, message } of await alerts()) {
-        if (await cache(id)) {
-            await producer.send({
-                topic: TOPIC,
-                messages: [{ value: JSON.stringify(message) }],
-            });
-            console.log("Cache miss, Produced: ", message);
-        } else {
-            console.log("Cache hit, ID: ", id);
-        }
-    }
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+for await (const { id, message } of alerts()) {
+    await producer.send({
+        topic: TOPIC,
+        messages: [{ value: JSON.stringify(message) }],
+    });
+    console.log("Produced: ", message);
 }

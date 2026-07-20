@@ -3,9 +3,22 @@ const { Kafka } = pkg.KafkaJS;
 
 export async function consumer(topic, config, handler) {
     // Set the consumer's group ID, offset, and initialize it
-    config["group.id"] = "eccc-group";
-    config["auto.offset.reset"] = "earliest";
-    const kafkaConsumer = new Kafka().consumer(config);
+    const kafkaConsumer = new Kafka({
+        kafkaJS: {
+            brokers: [config["bootstrap.servers"]],
+            ssl: true
+        },
+        "security.protocol": config["security.protocol"].toLowerCase(),
+        "ssl.ca.location": config["ssl.ca.location"],
+        "enable.ssl.certificate.verification": true,
+        "sasl.mechanism": config["sasl.mechanisms"],
+        "sasl.username": config["sasl.username"],
+        "sasl.password": config["sasl.password"]
+    }).consumer({
+        kafkaJS: {
+            groupId: "eccc-group"
+        }
+    });
 
     // Connect the consumer to the broker
     await kafkaConsumer.connect();
@@ -20,7 +33,7 @@ export async function consumer(topic, config, handler) {
     // Consume messages from the topic
     await kafkaConsumer.run({
         eachMessage: async ({topic, partition, message}) => {
-            console.log("Consumed: ", message);
+            console.log("Consumed: ", message.value?.toString());
             handler(topic, partition, message);
         },
     });

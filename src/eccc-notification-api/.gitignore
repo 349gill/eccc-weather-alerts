@@ -1,3 +1,4 @@
 client.properties
 node_modules
 service-key.json
+ca.pem
