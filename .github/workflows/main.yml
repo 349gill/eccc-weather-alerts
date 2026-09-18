@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/eccc-producer-service/**'
       - 'src/eccc-notification-api/**'
-      - '.github/workflows/deploy.yml'
+      - '.github/workflows/main.yml'
     workflow_dispatch:
 
 concurrency:
