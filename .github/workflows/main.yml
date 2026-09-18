@@ -7,7 +7,7 @@ on:
       - 'src/eccc-producer-service/**'
       - 'src/eccc-notification-api/**'
       - '.github/workflows/main.yml'
-    workflow_dispatch:
+  workflow_dispatch:
 
 concurrency:
   group: deploy
@@ -20,28 +20,38 @@ jobs:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USER }}
-          key: ${{ secrets.OCI_KEY }}
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
           script_stop: true
+          command_timeout: 30m
           script: |
             set -e
-            
-            export NVM_DIR="$HOME/.nvm" 
+            export NVM_DIR="$HOME/.nvm"
             . "$NVM_DIR/nvm.sh"
             nvm use 20
-            node -v && npm -v
-            
+
             cd ~/eccc-weather-alerts
+            OLD=$(git rev-parse HEAD)
+            
             git fetch origin main
             git reset --hard origin/main
+            NEW=$(git rev-parse HEAD)
 
-            cd src/eccc-producer-service
-            npm ci --omit=dev
+            install_if_changed() {
+              dir=$1
+              if [ ! -d "$dir/node_modules" ] || ! git diff --quiet "$OLD" "$NEW" -- "$dir/package.json" "$dir/package-lock.json"; then
+                echo "Installing dependencies in $dir"
+                (cd "$dir" && npm ci --omit=dev)
+              else
+                echo "No package changes in $dir, skipping install"
+              fi
+            }
+
+            install_if_changed src/eccc-producer-service
             pm2 reload 0 --update-env
 
-            cd ../eccc-notification-api
-            npm ci --omit=dev
+            install_if_changed src/eccc-notification-api
             pm2 reload 1 --update-env
 
             pm2 save
