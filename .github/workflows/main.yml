@@ -1,0 +1,40 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/eccc-producer-service/**'
+      - 'src/eccc-notification-api/**'
+      - '.github/workflows/deploy.yml'
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER }}
+          key: ${{ secrets.OCI_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd ~/eccc-weather-alerts
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd src/eccc-producer-service
+            npm ci --omit=dev
+            pm2 reload 0 --update-env
+
+            cd ../eccc-notification-api
+            npm ci --omit=dev
+            pm2 reload 1 --update-env
+
+            pm2 save
