@@ -25,4 +25,4 @@ jobs:
           key: ${{ secrets.OCI_KEY }}
           script_stop: true
           command_timeout: 30m
-          script: bash ~/deploy.sh
+          script: bash ~/eccc-weather-alerts/scripts/deploy.sh
