@@ -60,33 +60,57 @@ async function processMessage(msg) {
 }
 
 export async function* alerts() {
-    const channel = await (await amqp.connect("amqps://anonymous:anonymous@dd.weather.gc.ca")).createChannel();
-    await channel.assertQueue("q_anonymous.sr_subscribe.eccc-weather-alerts.eccc-producer-service-v2", { durable: true });
-    await channel.bindQueue("q_anonymous.sr_subscribe.eccc-weather-alerts.eccc-producer-service-v2", "xpublic", "v02.post.*.WXO-DD.alerts.cap.#");
-
-    const queue = [];
-    let notify = () => {};
-
-    console.log("Listening for ECCC Alerts...");
-    await channel.consume("q_anonymous.sr_subscribe.eccc-weather-alerts.eccc-producer-service-v2", (msg) => {
-        console.log("Received AMQP message, routing key: ", msg.fields.routingKey);
-        queue.push(msg);
-        notify();
-    });
-
     while (true) {
-        if (queue.length === 0) {
-            await new Promise((resolve) => (notify = resolve));
-        }
-        const msg = queue.shift();
-
         try {
-            const events = await processMessage(msg);
-            channel.ack(msg);
-            yield* events;
+            const conn = await amqp.connect("amqps://anonymous:anonymous@dd.weather.gc.ca?heartbeat=30");
+            conn.on("error", () => {});
+            const channel = await conn.createChannel();
+            await channel.assertQueue("q_anonymous.sr_subscribe.eccc-weather-alerts.eccc-producer-service-v2", { durable: true });
+            await channel.bindQueue("q_anonymous.sr_subscribe.eccc-weather-alerts.eccc-producer-service-v2", "xpublic", "v02.post.*.WXO-DD.alerts.cap.#");
+
+            const queue = [];
+            let notify = () => {};
+            let closed = false;
+
+            // Must call notify(), or the loop below parks on its promise forever
+            const shutdown = () => {
+                closed = true;
+                notify();
+            };
+            conn.on("error", shutdown);
+            conn.on("close", shutdown);
+
+            console.log("Listening for alerts...");
+            await channel.consume("q_anonymous.sr_subscribe.eccc-weather-alerts.eccc-producer-service-v2", (msg) => {
+                if (!msg) return shutdown();
+                console.log("Received: ", msg.fields.routingKey);
+                queue.push(msg);
+                notify();
+            });
+
+            while (!closed) {
+                if (queue.length === 0) {
+                    await new Promise((resolve) => (notify = resolve));
+                    continue;
+                }
+                const msg = queue.shift();
+
+                try {
+                    const events = await processMessage(msg);
+                    if (closed) break; // channel is dead, let the broker redeliver
+                    channel.ack(msg);
+                    yield* events;
+                } catch (err) {
+                    console.error("Failed to process alert: ", err);
+                    if (closed) break;
+                    channel.nack(msg, false, false);
+                }
+            }
         } catch (err) {
-            console.error("Failed to process alert: ", err);
-            channel.nack(msg, false, false);
+            console.error("Connection Dropped: ", err.message);
         }
+
+        console.log("Reconnecting...");
+        await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 }
