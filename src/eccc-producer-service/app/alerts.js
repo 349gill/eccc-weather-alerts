@@ -24,33 +24,39 @@ async function processMessage(msg) {
     // Fetch new event
     const xml = await (await fetch(`${baseUrl.replace(/\/$/, "")}/${relPath.replace(/^\//, "")}`)).text();
     const alert = new XMLParser({ ignoreAttributes: false }).parse(xml).alert;
-    const info = [alert.info].flat().find((i) => i.language?.startsWith("en")) ?? [alert.info].flat()[0];
-    const areaBlock = [info?.area].flat()[0];
 
-    // Figure out the province code from the zone
-    const area = areaBlock?.areaDesc;
-
-    const geocodes = [areaBlock?.geocode].flat().filter(Boolean);
-    const sgc = geocodes.find((g) => String(g?.valueName).includes("CAP-CP:Location"))?.value;
-    const province = SGC_PROVINCE[String(sgc).padStart(4, "0").slice(0, 2)];
-
-    // Skip anything we can't build a valid notification from
-    if (!info?.event || !area || !province) {
-        console.log("Skipped alert, missing field(s):", { event: info?.event, area, province });
-        return null;
+    if (alert.status !== "Actual") {
+        console.log("Skipped alert, status:", alert.status);
+        return [];
     }
 
-    // Build Kafka Event
-    return {
-        id: alert.identifier,
-        message: {
-            topic: province,
-            notification: {
-                title: `ECCC: ${info.event}`,
-                body: [area, info.description?.split("\n")[0]].filter(Boolean).join(" — "),
-            },
-        },
-    };
+    const events = [];
+    for (const info of [alert.info].flat().filter((i) => i?.language?.startsWith("en"))) {
+        for (const area of [info.area].flat().filter(Boolean)) {
+            // Figure out the province code from the zone
+            const sgc = [area.geocode].flat().filter(Boolean).find((g) => String(g?.valueName).startsWith("profile:CAP-CP:Location"))?.value;
+            const province = SGC_PROVINCE[String(sgc).slice(0, 2)];
+            
+            if (!info.event || !area.areaDesc || !province) {
+                console.log("Skipped area, missing field(s):", { event: info.event, area: area.areaDesc, sgc });
+                continue;
+            }
+
+            // Build Kafka Event
+            events.push({
+                id: `${alert.identifier}:${area.areaDesc}`,
+                message: {
+                    topic: province,
+                    notification: {
+                        title: info.event,
+                        body: [area.areaDesc, info.description?.trim().split("\n")[0]].filter(Boolean).join(" — "),
+                    },
+                },
+            });
+        }
+    }
+
+    return events;
 }
 
 export async function* alerts() {
@@ -75,9 +81,9 @@ export async function* alerts() {
         const msg = queue.shift();
 
         try {
-            const result = await processMessage(msg);
+            const events = await processMessage(msg);
             channel.ack(msg);
-            if (result) yield result;
+            yield* events;
         } catch (err) {
             console.error("Failed to process alert: ", err);
             channel.nack(msg, false, false);
