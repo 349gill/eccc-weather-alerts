@@ -1,30 +1,23 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -e
 
-export NVM_DIR="$HOME/.nvm"
-. "$NVM_DIR/nvm.sh"
+swapon --show | grep -q /swap || {
+  sudo fallocate -l 5G /swap
+  sudo chmod 600 /swap
+  sudo mkswap /swap
+  sudo swapon /swap
+}
+
+. ~/.nvm/nvm.sh
 nvm use 20
 
 cd ~/eccc-weather-alerts
-OLD=$(git rev-parse HEAD)
-git fetch origin main
-git reset --hard origin/main
-NEW=$(git rev-parse HEAD)
+git pull
 
-install_if_changed() {
-  dir=$1
-  if [ ! -d "$dir/node_modules" ] || [ -n "$(git diff --name-only "$OLD" "$NEW" -- "$dir" | grep -E 'package(-lock)?\.json$' || true)" ]; then
-    echo "Installing dependencies in $dir"
-    (cd "$dir" && npm ci --omit=dev)
-  else
-    echo "No package changes in $dir, skipping install"
-  fi
-}
+cd src/eccc-producer-service
+npm ci
+pm2 reload 0
 
-install_if_changed src/eccc-producer-service
-pm2 reload 0 --update-env
-
-install_if_changed src/eccc-notification-api
-pm2 reload 1 --update-env
-
-pm2 save
+cd ../eccc-notification-api
+npm ci
+pm2 reload 1
