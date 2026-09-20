@@ -21,5 +21,3 @@ pm2 reload 0
 cd ../eccc-notification-api
 npm ci
 pm2 reload 1
-
-# TEST CI/CD :: Trigger Pipeline
