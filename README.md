@@ -2,7 +2,7 @@
 An end-to-end notification system to alert mobile users about weather emergencies in Canada
 
 ## Architecture
-[![Grafana Dashboard](./images/my-dashboard-screenshot.png)](http://40.233.110.153:3000/public-dashboards/e2e62f153c6344afa9a3161af1895780)
+[![Grafana](https://img.shields.io/badge/Monitoring-Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)](http://40.233.110.153:3000/public-dashboards/e2e62f153c6344afa9a3161af1895780)
 
 This service is only available on Android for now. The Android app is responsible for allowing users to sign up for push notifications.
 
