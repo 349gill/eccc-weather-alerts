@@ -11,31 +11,39 @@
     {
       "id": 1,
       "type": "timeseries",
-      "title": "Kafka throughput (eccc-events)",
+      "title": "Kafka throughput (eccc-events, msgs/min)",
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 9 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "msg/s" }, "overrides": [] },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "rate(eccc_kafka_messages_produced_total{topic=\"eccc-events\"}[5m])",
-          "legendFormat": "produced"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "type": "timeseries",
-      "title": "AMQP connection drops (per hour)",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 9 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
       "targets": [
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "increase(eccc_amqp_drops_total[1h])",
+          "expr": "round(increase(eccc_kafka_messages_produced_total{topic=\"eccc-events\"}[1m]))",
+          "legendFormat": "produced"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "AMQP connection drops",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "round(sum(increase(eccc_amqp_drops_total[$__range])))",
+          "instant": true,
+          "range": false,
           "legendFormat": "drops"
         }
       ]
