@@ -14,3 +14,7 @@ pm2 reload 0
 cd ../eccc-notification-api
 npm ci
 pm2 reload 1
+
+cd ../eccc-observability
+docker compose up -d
+docker compose restart prometheus
