@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/eccc-producer-service/**'
       - 'src/eccc-notification-api/**'
+      - 'src/eccc-observability/**'
       - '.github/workflows/main.yml'
       - 'scripts/deploy.sh'
   workflow_dispatch:
