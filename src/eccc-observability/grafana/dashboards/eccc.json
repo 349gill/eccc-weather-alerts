@@ -1,0 +1,44 @@
+{
+  "uid": "eccc-overview",
+  "title": "ECCC Weather Alerts",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "tags": ["eccc"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Kafka throughput (eccc-events)",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "msg/s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(eccc_kafka_messages_produced_total{topic=\"eccc-events\"}[5m])",
+          "legendFormat": "produced"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "AMQP connection drops (per hour)",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "increase(eccc_amqp_drops_total[1h])",
+          "legendFormat": "drops"
+        }
+      ]
+    }
+  ]
+}

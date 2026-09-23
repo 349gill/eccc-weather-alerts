@@ -1,5 +1,6 @@
 import amqp from "amqplib";
 import { XMLParser } from "fast-xml-parser";
+import { amqpDrops } from "./metrics.js";
 
 // Zone-to-province mapping
 const SGC_PROVINCE = {
@@ -74,7 +75,9 @@ export async function* alerts() {
 
             // Must call notify(), or the loop below parks on its promise forever
             const shutdown = () => {
+                if (closed) return;
                 closed = true;
+                amqpDrops.inc();
                 notify();
             };
             conn.on("error", shutdown);

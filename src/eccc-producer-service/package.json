@@ -12,6 +12,7 @@
   "dependencies": {
     "@confluentinc/kafka-javascript": "^1.10.0",
     "amqplib": "^2.0.1",
-    "fast-xml-parser": "^5.10.1"
+    "fast-xml-parser": "^5.10.1",
+    "prom-client": "^15.1.3"
   }
 }

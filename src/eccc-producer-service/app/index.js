@@ -3,6 +3,7 @@ import pkg from "@confluentinc/kafka-javascript";
 const { Kafka } = pkg.KafkaJS;
 
 import { alerts } from "./alerts.js";
+import { kafkaProduced } from "./metrics.js";
 
 const TOPIC = "eccc-events";
 
@@ -41,5 +42,6 @@ for await (const { id, message } of alerts()) {
         topic: TOPIC,
         messages: [{ value: JSON.stringify(message) }],
     });
+    kafkaProduced.inc({ topic: TOPIC });
     console.log("Produced: ", message);
 }
