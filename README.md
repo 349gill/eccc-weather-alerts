@@ -2,8 +2,6 @@
 An end-to-end notification system to alert mobile users about weather emergencies in Canada
 
 ## Architecture
-[![Grafana](https://img.shields.io/badge/Monitoring-Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)](http://40.233.110.153:3000/public-dashboards/e2e62f153c6344afa9a3161af1895780)
-
 This service is only available on Android for now. The Android app is responsible for allowing users to sign up for push notifications.
 
 <img src="assets/app.png" width="50%">
@@ -16,6 +14,13 @@ The eccc-notification-api is responsible for consuming the latest events from th
 
 ## Infrastructure
 Both eccc-notification-api and eccc-producer-service are deployed on an Oracle Cloud Compute Instance (Virtual Machine). For the Kafka Cluster, I'm using [Aiven's](https://aiven.io/) Managed Kafka Services.
+
+## Monitoring
+[![Grafana](https://img.shields.io/badge/Monitoring-Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)](http://40.233.110.153:3000/public-dashboards/e2e62f153c6344afa9a3161af1895780)
+
+There is a publically hosted Grafana dashboard containing some simple metrics, such as AMQP connection failures and messages produced.
+
+<img width="50%" src="https://github.com/user-attachments/assets/c373dbd8-ed08-4e5d-9e7d-479077598e6c" />
 
 ## Usage
 Install the latest version from [releases](releases).
