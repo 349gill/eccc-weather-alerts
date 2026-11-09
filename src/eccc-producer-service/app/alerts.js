@@ -22,8 +22,15 @@ const SGC_PROVINCE = {
 async function processMessage(msg) {
     const [, baseUrl, relPath] = msg.content.toString().trim().split(/\s+/);
 
-    // Fetch new event
-    const xml = await (await fetch(`${baseUrl.replace(/\/$/, "")}/${relPath.replace(/^\//, "")}`)).text();
+    const fullUrl = new URL(relPath, baseUrl);
+    const allowedHosts = ["dd.weather.gc.ca"];
+    if (!allowedHosts.includes(fullUrl.hostname) || (fullUrl.protocol !== "http:" && fullUrl.protocol !== "https:")) {
+        throw new Error(`Unauthorized host or protocol in alert message: ${fullUrl.hostname}`);
+    }
+
+    const res = await fetch(fullUrl.href);
+    if (!res.ok) throw new Error(`HTTP fetch failed with status ${res.status}`);
+    const xml = await res.text();
     const alert = new XMLParser({ ignoreAttributes: false }).parse(xml).alert;
 
     if (alert.status !== "Actual") {
